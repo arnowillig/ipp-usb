@@ -464,11 +464,14 @@ func (transport *UsbTransport) RoundTripWithSession(session int,
 			body:    outreq.Body,
 		}
 	}
+	
+	cl := outreq.ContentLength
+	noChunk := transport.quirks.GetNoChunkedEncoding()
+
 
 	// Prepare to correctly handle HTTP transaction, in a case
 	// client drops request in a middle of reading body
-	switch {
-	case outreq.ContentLength <= 0:
+	if cl <= 0 {
 		// Nothing to do
 		if outreq.ContentLength < 0 {
 			transport.log.HTTPDebug('>', session,
@@ -478,7 +481,7 @@ func (transport *UsbTransport) RoundTripWithSession(session int,
 				"body is empty, sending as is")
 		}
 
-	case outreq.ContentLength < 16384:
+	} else if cl < 16384 {
 		// Body is small, prefetch it before sending to USB
 		buf := &bytes.Buffer{}
 		_, err := io.CopyN(buf, outreq.Body, outreq.ContentLength)
@@ -493,7 +496,11 @@ func (transport *UsbTransport) RoundTripWithSession(session int,
 			"body is small (%d bytes), prefetched before sending",
 			buf.Len())
 
-	default:
+	} else if noChunk {
+		// quirk: send large body with explicit Content-Length
+		transport.log.HTTPDebug('>', session,
+			"body is large (%d bytes), sending without chunked encoding due to quirk", cl)
+	} else {
 		// Force chunked encoding, so if client drops request,
 		// we still be able to correctly handle HTTP transaction
 		transport.log.HTTPDebug('>', session,

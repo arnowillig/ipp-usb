@@ -1,4 +1,4 @@
-/* ipp-usb - HTTP reverse proxy, backed by IPP-over-USB connection to device
+ /* ipp-usb - HTTP reverse proxy, backed by IPP-over-USB connection to device
  *
  * Copyright (C) 2020 and up by Alexander Pevzner (pzz@apevzner.com)
  * See LICENSE for license terms and conditions
@@ -52,6 +52,7 @@ const (
 	QuirkNmUsbSendDelay          = "usb-send-delay"
 	QuirkNmZlpRecvHack           = "zlp-recv-hack"
 	QuirkNmZlpSend               = "zlp-send"
+	QuirkNoChunkedEncoding       = "no-chunked-encoding"
 )
 
 // quirkParse maps quirk names into appropriate parsing methods,
@@ -73,6 +74,7 @@ var quirkParse = map[string]func(*Quirk) error{
 	QuirkNmUsbSendDelayThreshold: (*Quirk).parseUint,
 	QuirkNmZlpRecvHack:           (*Quirk).parseBool,
 	QuirkNmZlpSend:               (*Quirk).parseBool,
+	QuirkNoChunkedEncoding:       (*Quirk).parseBool,
 }
 
 // quirkDefaultStrings contains default values for quirks, in
@@ -94,6 +96,7 @@ var quirkDefaultStrings = map[string]string{
 	QuirkNmUsbSendDelayThreshold: "0",
 	QuirkNmZlpRecvHack:           "false",
 	QuirkNmZlpSend:               "false",
+	QuirkNoChunkedEncoding:       "false",
 }
 
 // quirkDefault contains default values for quirks, precompiled.
@@ -540,6 +543,11 @@ func (quirks *Quirks) GetZlpRecvHack() bool {
 // taking the whole set into consideration.
 func (quirks *Quirks) GetZlpSend() bool {
 	return quirks.Get(QuirkNmZlpSend).Parsed.(bool)
+}
+
+// GetNoChunkedEncoding returns whether to disable chunked encoding.
+func (quirks *Quirks) GetNoChunkedEncoding() bool {
+	return quirks.Get(QuirkNoChunkedEncoding).Parsed.(bool)
 }
 
 // QuirksDb represents in-memory data base of Quirks, as loaded
