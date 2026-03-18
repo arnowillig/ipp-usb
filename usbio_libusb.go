@@ -42,6 +42,18 @@ import (
 // libusb_strerror_wrapper (int code) {
 //     return libusb_strerror(code);
 // }
+//
+// // Compatibility wrapper for libusb API differences.
+// // Newer libusb provides libusb_handle_events_completed(ctx, completed),
+// // older versions provide libusb_handle_events(ctx).
+// static inline int
+// libusb_handle_events_compat (libusb_context *ctx) {
+// #if defined(LIBUSB_API_VERSION) && (LIBUSB_API_VERSION >= 0x01000102)
+//     return libusb_handle_events_completed(ctx, NULL);
+// #else
+//     return libusb_handle_events(ctx);
+// #endif
+// }
 import "C"
 
 // UsbError represents USB error
@@ -870,7 +882,8 @@ func (iface *UsbInterface) Recv(ctx context.Context,
 		return 0, UsbError{"libusb_submit_transfer", UsbErrCode(rc)}
 	}
 
-	C.libusb_interrupt_event_handler(libusbContextPtr)
+//	C.libusb_interrupt_event_handler(libusbContextPtr)
+	C.libusb_handle_events_compat(libusbContextPtr)
 
 	// Wait for completion
 	select {
